@@ -18,6 +18,8 @@ public class JUYUP6 {
 	private int probeTimesSuccessfulSearch = 0;
 	private int probeTimesUnsuccessfulSearch = 0;
 
+	private int recentProbeTimes = 0;
+
 	/**
 	 * create an empty hash table of size s
 	 * 
@@ -40,9 +42,11 @@ public class JUYUP6 {
 	 * @return false if key is present, true otherwise
 	 */
 	public boolean insert(String key, String record) {
-		insertTimes++;
 
 		int index = find(key);
+		insertTimes++;
+		probeTimesInsert += recentProbeTimes;
+		recentProbeTimes = 0;
 		if (keyTable[index].equals(key))
 			return false;
 
@@ -57,7 +61,13 @@ public class JUYUP6 {
 	 * @return the record if key is present, null otherwise
 	 */
 	public String isPresent(String key) {
-		return recordTable[find(key)];
+		String record = recordTable[find(key)];
+		if (record == null)
+			probeTimesUnsuccessfulSearch += recentProbeTimes;
+		else
+			probeTimesSuccessfulSearch += recentProbeTimes;
+		recentProbeTimes = 0;
+		return record;
 	}
 
 	/**
@@ -67,12 +77,20 @@ public class JUYUP6 {
 	 */
 	public boolean delete(String key) {
 		int index = find(key);
-		if (keyTable[index] == null)
-			return false;
+		boolean retVal;
 
-		keyTable[index] = null;
-		recordTable[index] = null;
-		return true;
+		if (keyTable[index] == null) {
+			probeTimesUnsuccessfulSearch += recentProbeTimes;
+			retVal = false;
+		} else {
+			keyTable[index] = null;
+			recordTable[index] = null;
+			probeTimesSuccessfulSearch += recentProbeTimes;
+			retVal = true;
+		}
+
+		recentProbeTimes = 0;
+		return retVal;
 	}
 
 	/**
@@ -80,7 +98,12 @@ public class JUYUP6 {
 	 * @return the number of records in the hash table
 	 */
 	public int size() {
-		return 0;
+		int numRecord = 0;
+		for (String record : recordTable) {
+			if (record != null)
+				numRecord++;
+		}
+		return numRecord;
 	}
 
 	/**
@@ -89,7 +112,10 @@ public class JUYUP6 {
 	 * record
 	 */
 	public void listAll() {
-
+		for (int i = 0; i < recordTable.length; i++) {
+			if (recordTable[i] != null)
+				System.out.println(i + " : " + recordTable[i]);
+		}
 	}
 
 	/**
@@ -111,7 +137,7 @@ public class JUYUP6 {
 					"Average probes in unsuccessful search = %.1f",
 					Double.valueOf(probeTimesUnsuccessfulSearch)
 							/ searchTimesUnsuccessfulSearch));
-		
+
 		if (searchTimesSuccessfulSearch == 0)
 			System.out.println("No successful search");
 		else
@@ -133,7 +159,7 @@ public class JUYUP6 {
 		int i = 0;
 		String testKey;
 		int temp = 0;
-		for (testKey = keyTable[hashVal], i = 0, probeTimesInsert++; testKey != null
+		for (testKey = keyTable[hashVal], i = 0, recentProbeTimes++; testKey != null
 				&& !testKey.equals(key); i++) {
 			temp = hashVal + i * hashVal2;
 			temp %= tableSize;
