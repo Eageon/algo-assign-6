@@ -1,13 +1,20 @@
 /**
  * @author Jun Yu
- * @license GPLv2 IDE Eclipse 4.3 Compiler JDK7
+ * @license GPLv2 
+ * @IDE Eclipse 4.3 
+ * @Compiler JDK7
  */
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class JUYUP6 {
 
 	private String[] recordTable;
 	private String[] keyTable;
-	private int tableSize;
+	private int tableSize = 0;
+	private int currentRecord = 0;
 	private static final int DEFAULT_HASHTABLE_SIZE = 1013;
 
 	// Accounting data
@@ -42,6 +49,8 @@ public class JUYUP6 {
 	 * @return false if key is present, true otherwise
 	 */
 	public boolean insert(String key, String record) {
+		if (currentRecord >= tableSize)
+			throw new ArrayIndexOutOfBoundsException(currentRecord + 1);
 
 		int index = find(key);
 		insertTimes++;
@@ -52,6 +61,7 @@ public class JUYUP6 {
 
 		keyTable[index] = key;
 		recordTable[index] = record;
+		currentRecord++;
 		return true;
 	}
 
@@ -86,6 +96,7 @@ public class JUYUP6 {
 			keyTable[index] = null;
 			recordTable[index] = null;
 			probeTimesSuccessfulSearch += recentProbeTimes;
+			currentRecord--;
 			retVal = true;
 		}
 
@@ -114,7 +125,7 @@ public class JUYUP6 {
 	public void listAll() {
 		for (int i = 0; i < recordTable.length; i++) {
 			if (recordTable[i] != null)
-				System.out.println(i + " : " + recordTable[i]);
+				System.out.println(i + " " + keyTable[i] + ":" + recordTable[i]);
 		}
 	}
 
@@ -188,6 +199,21 @@ public class JUYUP6 {
 		return 13 - hashVal % 13;
 	}
 
+	public void clear() {
+		for (int i = 0; i < keyTable.length; i++) {
+			keyTable[i] = null;
+			recordTable[i] = null;
+		}
+		currentRecord = 0;
+		insertTimes = 0;
+		probeTimesInsert = 0;
+		searchTimesSuccessfulSearch = 0;
+		searchTimesUnsuccessfulSearch = 0;
+		probeTimesSuccessfulSearch = 0;
+		probeTimesUnsuccessfulSearch = 0;
+		recentProbeTimes = 0;
+	}
+
 	public void usage() {
 		String use = "";
 		use += "N		Print your name(s) followed by a newline\n";
@@ -214,7 +240,78 @@ public class JUYUP6 {
 	}
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		JUYUP6 hashTable = new JUYUP6(DEFAULT_HASHTABLE_SIZE);
+		hashTable.usage();
+		System.out.println("");
+
+		String cmd;
+		BufferedReader input = new BufferedReader(new InputStreamReader(
+				System.in));
+		try {
+			for (;;) {
+				cmd = input.readLine();
+				char option = cmd.charAt(0);
+				option = Character.toUpperCase(option);
+				String param = cmd.substring(2);
+				param.trim();
+
+				String key;
+				String record;
+				boolean success;
+
+				switch (option) {
+				case 'N':
+					System.out.println("Jun Yu");
+					break;
+				case 'C':
+					hashTable.clear();
+					break;
+				case 'I':
+					String[] array = param.split(":");
+					key = array[0];
+					record = array[1];
+					success = hashTable.insert(key.trim(), record.trim());
+					if (success == true)
+						System.out.println("Key " + key + " inserted");
+					else
+						System.out.println("Key " + key + " already exists");
+					break;
+				case 'D':
+					key = param;
+					success = hashTable.delete(key);
+					if (success == true)
+						System.out.println("Key " + key + " deleted");
+					else
+						System.out.println("Key " + key + " not present");
+					break;
+				case 'S':
+					key = param;
+					record = hashTable.isPresent(key);
+					if (record == null)
+						System.out.println("Key " + key + " not found");
+					else
+						System.out.println("Key " + key + ": " + record);
+					break;
+				case 'Z':
+					System.out.println("Size is " + hashTable.size());
+					break;
+				case 'P':
+					hashTable.listAll();
+					break;
+				case 'T':
+					hashTable.printStats();
+					break;
+				case 'E':
+					return;
+				default:
+					System.out
+							.println("Please see usage and input proper command");
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
