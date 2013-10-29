@@ -47,8 +47,9 @@ public class JUYUP6 {
 	 *            is a string of lower case alphabetic chars w/o spaces
 	 * @param record
 	 * @return false if key is present, true otherwise
+	 * @exception the table overflowed
 	 */
-	public boolean insert(String key, String record) {
+	public boolean insert(String key, String record) throws ArrayIndexOutOfBoundsException {
 		if (currentRecord >= tableSize)
 			throw new ArrayIndexOutOfBoundsException(currentRecord + 1);
 
@@ -56,7 +57,7 @@ public class JUYUP6 {
 		insertTimes++;
 		probeTimesInsert += recentProbeTimes;
 		recentProbeTimes = 0;
-		if (keyTable[index].equals(key))
+		if (keyTable[index] != null)
 			return false;
 
 		keyTable[index] = key;
@@ -72,10 +73,13 @@ public class JUYUP6 {
 	 */
 	public String isPresent(String key) {
 		String record = recordTable[find(key)];
-		if (record == null)
+		if (record == null) {
 			probeTimesUnsuccessfulSearch += recentProbeTimes;
-		else
+			searchTimesUnsuccessfulSearch++;
+		} else {
 			probeTimesSuccessfulSearch += recentProbeTimes;
+			searchTimesSuccessfulSearch++;
+		}
 		recentProbeTimes = 0;
 		return record;
 	}
@@ -91,11 +95,13 @@ public class JUYUP6 {
 
 		if (keyTable[index] == null) {
 			probeTimesUnsuccessfulSearch += recentProbeTimes;
+			searchTimesUnsuccessfulSearch++;
 			retVal = false;
 		} else {
 			keyTable[index] = null;
 			recordTable[index] = null;
 			probeTimesSuccessfulSearch += recentProbeTimes;
+			searchTimesSuccessfulSearch++;
 			currentRecord--;
 			retVal = true;
 		}
@@ -169,8 +175,8 @@ public class JUYUP6 {
 		int hashVal2 = hash2(hashVal);
 		int i = 0;
 		String testKey;
-		int temp = 0;
-		for (testKey = keyTable[hashVal], i = 0, recentProbeTimes++; testKey != null
+		int temp = hashVal;
+		for (testKey = keyTable[temp], i = 0, recentProbeTimes++; testKey != null
 				&& !testKey.equals(key); i++) {
 			temp = hashVal + i * hashVal2;
 			temp %= tableSize;
@@ -252,12 +258,11 @@ public class JUYUP6 {
 				cmd = input.readLine();
 				char option = cmd.charAt(0);
 				option = Character.toUpperCase(option);
-				String param = cmd.substring(2);
-				param.trim();
+				String param;
 
 				String key;
 				String record;
-				boolean success;
+				boolean success = false;
 
 				switch (option) {
 				case 'N':
@@ -267,17 +272,22 @@ public class JUYUP6 {
 					hashTable.clear();
 					break;
 				case 'I':
+					param = cmd.substring(2);
 					String[] array = param.split(":");
 					key = array[0];
 					record = array[1];
-					success = hashTable.insert(key.trim(), record.trim());
+					try {
+						success = hashTable.insert(key.trim(), record.trim());
+					}catch (ArrayIndexOutOfBoundsException e) {
+						System.out.println("Table has overflowed");
+					}
 					if (success == true)
 						System.out.println("Key " + key + " inserted");
 					else
 						System.out.println("Key " + key + " already exists");
 					break;
 				case 'D':
-					key = param;
+					key = cmd.substring(2);
 					success = hashTable.delete(key);
 					if (success == true)
 						System.out.println("Key " + key + " deleted");
@@ -285,7 +295,7 @@ public class JUYUP6 {
 						System.out.println("Key " + key + " not present");
 					break;
 				case 'S':
-					key = param;
+					key = cmd.substring(2);
 					record = hashTable.isPresent(key);
 					if (record == null)
 						System.out.println("Key " + key + " not found");
